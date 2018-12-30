@@ -167,6 +167,8 @@ static void spi_lld_serve_tx_interrupt(SPIDriver *spip, uint32_t flags) {
   (void)spip;
   (void)flags;
 #endif
+  dmaStreamDisable(spip->dmatx);
+  _spi_isr_code(spip);
 }
 
 /*===========================================================================*/
@@ -198,6 +200,7 @@ void spi_lld_init(void) {
   SPID1.txdmamode = STM32_DMA_CR_CHSEL(SPI1_TX_DMA_CHANNEL) |
                     STM32_DMA_CR_PL(STM32_SPI_SPI1_DMA_PRIORITY) |
                     STM32_DMA_CR_DIR_M2P |
+                    STM32_DMA_CR_TCIE |
                     STM32_DMA_CR_DMEIE |
                     STM32_DMA_CR_TEIE;
 #endif
@@ -577,15 +580,17 @@ void spi_lld_send(SPIDriver *spip, size_t n, const void *txbuf) {
 
   osalDbgAssert(n < 65536, "unsupported DMA transfer size");
 
-  dmaStreamSetMemory0(spip->dmarx, &dummyrx);
+  /*dmaStreamSetMemory0(spip->dmarx, &dummyrx);
   dmaStreamSetTransactionSize(spip->dmarx, n);
   dmaStreamSetMode(spip->dmarx, spip->rxdmamode);
+  */
+
 
   dmaStreamSetMemory0(spip->dmatx, txbuf);
   dmaStreamSetTransactionSize(spip->dmatx, n);
   dmaStreamSetMode(spip->dmatx, spip->txdmamode | STM32_DMA_CR_MINC);
 
-  dmaStreamEnable(spip->dmarx);
+  //dmaStreamEnable(spip->dmarx);
   dmaStreamEnable(spip->dmatx);
 }
 
